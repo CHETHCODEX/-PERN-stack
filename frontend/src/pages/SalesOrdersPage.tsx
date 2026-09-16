@@ -268,12 +268,12 @@ export const SalesOrdersPage: React.FC<SalesOrdersPageProps> = ({ initialOrderId
                         <div className="text-xs text-slate-500">{new Date(ord.orderDate).toLocaleDateString()}</div>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-semibold text-slate-900">
-                        â‚¹{Number(ord.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        Rs. {Number(ord.totalAmount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                       <td className="px-4 py-3 text-center whitespace-nowrap">{getStatusBadge(ord.status)}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <span className="text-xs font-semibold text-blue-600 hover:text-blue-800">
-                          View Details â†’
+                          View Details &rarr;
                         </span>
                       </td>
                     </tr>
@@ -471,3 +471,4 @@ export const SalesOrdersPage: React.FC<SalesOrdersPageProps> = ({ initialOrderId
     </div>
   );
 };
+

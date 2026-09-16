@@ -232,7 +232,7 @@ export const EnquiriesPage: React.FC<{ onNavigateToQuotations: (enquiryId: numbe
                           onClick={() => onNavigateToQuotations(enq.id)}
                           className="inline-flex items-center text-xs font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 py-1.5 px-3 rounded-md transition"
                         >
-                          <span>Generate Quotation â†’</span>
+                          <span>Generate Quotation &rarr;</span>
                         </button>
                       )}
                     </td>
@@ -452,3 +452,4 @@ export const EnquiriesPage: React.FC<{ onNavigateToQuotations: (enquiryId: numbe
     </div>
   );
 };
+
