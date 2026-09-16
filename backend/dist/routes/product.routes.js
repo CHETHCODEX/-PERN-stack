@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const product_controller_1 = require("../controllers/product.controller");
+const auth_1 = require("../middleware/auth");
+const rbac_1 = require("../middleware/rbac");
+const validate_1 = require("../middleware/validate");
+const validators_1 = require("../validators");
+const client_1 = require("@prisma/client");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate);
+router.get('/', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), product_controller_1.getProducts);
+router.get('/:id', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), product_controller_1.getProductById);
+router.patch('/:productId/stock', (0, rbac_1.authorizeRoles)(client_1.Role.ADMIN), (0, validate_1.validateBody)(validators_1.updateStockSchema), product_controller_1.updatePhysicalInventory);
+exports.default = router;

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const quotation_controller_1 = require("../controllers/quotation.controller");
+const auth_1 = require("../middleware/auth");
+const rbac_1 = require("../middleware/rbac");
+const validate_1 = require("../middleware/validate");
+const validators_1 = require("../validators");
+const client_1 = require("@prisma/client");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticate);
+router.get('/', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), quotation_controller_1.getQuotations);
+router.post('/', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), (0, validate_1.validateBody)(validators_1.quotationSchema), quotation_controller_1.createQuotation);
+router.get('/:id', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), quotation_controller_1.getQuotationById);
+router.patch('/:id/status', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), (0, validate_1.validateBody)(validators_1.updateQuotationStatusSchema), quotation_controller_1.updateQuotationStatus);
+router.post('/:id/convert', (0, rbac_1.authorizeRoles)(client_1.Role.SALES, client_1.Role.ADMIN), quotation_controller_1.convertQuotationToSalesOrder);
+exports.default = router;
