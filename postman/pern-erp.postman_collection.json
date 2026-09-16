@@ -1,0 +1,264 @@
+{
+  "info": {
+    "name": "PERN Mini ERP API Collection",
+    "description": "Full REST API test suite for PERN Mini ERP covering Auth, Customers, Products, Enquiries, Quotations, Sales Orders, Concurrency, and Dispatch.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5001/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "enquiryId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "quotationId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "salesOrderId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Login - Admin (Sets Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fundsroom.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Login - Sales User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sales@fundsroom.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Products & Inventory",
+      "item": [
+        {
+          "name": "Get Products & Live Stock",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          }
+        },
+        {
+          "name": "Adjust Physical Stock (Admin Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"physicalQty\": 150\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/1/stock", "host": ["{{baseUrl}}"], "path": ["products", "1", "stock"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Customer Enquiries",
+      "item": [
+        {
+          "name": "Create Enquiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.enquiry && jsonData.enquiry.id) {",
+                  "    pm.collectionVariables.set('enquiryId', jsonData.enquiry.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": 1,\n  \"requiredDate\": \"2026-10-15\",\n  \"notes\": \"Urgent industrial equipment batch requirement\",\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 10 },\n    { \"productId\": 2, \"quantity\": 2 }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/enquiries", "host": ["{{baseUrl}}"], "path": ["enquiries"] }
+          }
+        },
+        {
+          "name": "Get All Enquiries",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/enquiries", "host": ["{{baseUrl}}"], "path": ["enquiries"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Commercial Quotations",
+      "item": [
+        {
+          "name": "Create Quotation (Backend Recalculates Totals)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.quotation && jsonData.quotation.id) {",
+                  "    pm.collectionVariables.set('quotationId', jsonData.quotation.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enquiryId\": {{enquiryId}},\n  \"validUntil\": \"2026-10-30\",\n  \"items\": [\n    {\n      \"productId\": 1,\n      \"quantity\": 10,\n      \"unitPrice\": 1850.00,\n      \"discountPct\": 5,\n      \"gstPct\": 18\n    },\n    {\n      \"productId\": 2,\n      \"quantity\": 2,\n      \"unitPrice\": 14200.00,\n      \"discountPct\": 10,\n      \"gstPct\": 18\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quotations", "host": ["{{baseUrl}}"], "path": ["quotations"] }
+          }
+        },
+        {
+          "name": "Mark Quotation ACCEPTED",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACCEPTED\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quotations/{{quotationId}}/status", "host": ["{{baseUrl}}"], "path": ["quotations", "{{quotationId}}", "status"] }
+          }
+        },
+        {
+          "name": "Convert Accepted Quotation to Sales Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.salesOrder && jsonData.salesOrder.id) {",
+                  "    pm.collectionVariables.set('salesOrderId', jsonData.salesOrder.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/quotations/{{quotationId}}/convert", "host": ["{{baseUrl}}"], "path": ["quotations", "{{quotationId}}", "convert"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Sales Orders, Reservation & Dispatch",
+      "item": [
+        {
+          "name": "Get Sales Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/sales-orders", "host": ["{{baseUrl}}"], "path": ["sales-orders"] }
+          }
+        },
+        {
+          "name": "Confirm Sales Order (Pessimistic Row Lock & Reservation)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/sales-orders/{{salesOrderId}}/confirm", "host": ["{{baseUrl}}"], "path": ["sales-orders", "{{salesOrderId}}", "confirm"] }
+          }
+        },
+        {
+          "name": "Process Dispatch (Deduct Physical + Reserved)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleNumber\": \"MH-12-AB-9988\",\n  \"driverName\": \"Suresh Pawar\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sales-orders/{{salesOrderId}}/dispatch", "host": ["{{baseUrl}}"], "path": ["sales-orders", "{{salesOrderId}}", "dispatch"] }
+          }
+        }
+      ]
+    }
+  ]
+}
