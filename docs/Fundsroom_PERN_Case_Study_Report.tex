@@ -1,0 +1,419 @@
+\documentclass[11pt,a4paper]{article}
+
+% --- Essential Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.95in]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{microtype}
+
+% --- Color Palette (Corporate Slate / Blue) ---
+\definecolor{primary}{RGB}{37, 99, 235}       % Royal Blue
+\definecolor{secondary}{RGB}{15, 23, 42}      % Slate 900
+\definecolor{accent}{RGB}{16, 185, 129}       % Emerald Green
+\definecolor{danger}{RGB}{239, 68, 68}        % Crimson Red
+\definecolor{lightgray}{RGB}{248, 250, 252}   % Slate 50
+\definecolor{bordercolor}{RGB}{226, 232, 240} % Slate 200
+\definecolor{darkgray}{RGB}{71, 85, 105}      % Slate 600
+
+% --- Hyperlink Setup ---
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    filecolor=primary,
+    urlcolor=primary,
+    pdfauthor={Chethan Subramanyam},
+    pdftitle={FundsRoom PERN Case Study - Technical Architecture and Operational Specification}
+}
+
+% --- Header & Footer ---
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textbf{\textcolor{secondary}{FundsRoom Technical Evaluation}} | PERN Full-Stack Mini ERP}
+\rhead{\textcolor{darkgray}{Technical Case Study Report}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Section Styling ---
+\titleformat{\section}
+  {\Large\bfseries\color{secondary}}
+  {\thesection}{1em}{}[\titlerule]
+
+\titleformat{\subsection}
+  {\large\bfseries\color{primary}}
+  {\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{secondary}}
+  {\thesubsubsection}{1em}{}
+
+% --- Code Listing Style ---
+\lstset{
+  backgroundcolor=\color{lightgray},
+  basicstyle=\ttfamily\footnotesize\color{secondary},
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{bordercolor},
+  keywordstyle=\color{primary}\bfseries,
+  commentstyle=\color{darkgray}\itshape,
+  stringstyle=\color{accent},
+  numbers=left,
+  numberstyle=\tiny\color{darkgray},
+  numbersep=8pt,
+  tabsize=2,
+  showstringspaces=false
+}
+
+% --- Document Begins ---
+\begin{document}
+
+% --- Title & Cover ---
+\begin{titlepage}
+    \centering
+    \vspace*{1.2cm}
+    
+    {\Huge \textbf{\textcolor{secondary}{FundsRoom Technical Case Study}}}\\[0.4cm]
+    {\LARGE \textbf{\textcolor{primary}{PERN Full-Stack Mini ERP \& Order Fulfillment System}}}\\[0.25cm]
+    {\large Production Architecture, Pessimistic Concurrency \& Operational Specification}\\[1.3cm]
+    
+    \begin{tcolorbox}[colback=lightgray,colframe=primary,arc=3mm,width=0.94\textwidth]
+        \centering
+        \vspace{0.2cm}
+        \textbf{Candidate Name:} Chethan Subramanyam\\[0.15cm]
+        \textbf{Institution:} GITAM (Deemed to be University), Bengaluru\\[0.15cm]
+        \textbf{Position Applied:} Full Stack Developer\\[0.15cm]
+        \textbf{Technical Evaluation Track:} PERN Stack (PostgreSQL, Express, React, Node.js, TypeScript)\\[0.15cm]
+        \textbf{Submission Date:} September 17, 2026
+        \vspace{0.2cm}
+    \end{tcolorbox}
+    
+    \vspace{1.2cm}
+    
+    \begin{tcolorbox}[colback=white,colframe=bordercolor,arc=2mm,width=0.94\textwidth,title=\textbf{\textcolor{secondary}{Official Submission Credentials \& Verification Links}}]
+        \small
+        \begin{itemize}[leftmargin=1.5em, itemsep=0.35em]
+            \item \textbf{GitHub Repository:} \href{https://github.com/CHETHCODEX/-PERN-stack}{github.com/CHETHCODEX/-PERN-stack}
+            \item \textbf{Branch Tracked:} \texttt{main} (contains progressive development commit history)
+            \item \textbf{Postman Collection:} \texttt{postman/pern-erp.postman\_collection.json}
+            \item \textbf{Automated Test Suite:} 6/6 Passing Tests (\texttt{npm test} in \texttt{backend/})
+            \item \textbf{Screen Recording (Google Drive / Loom):} \textit{[Insert Your 5-Minute Video Recording Link Here]}
+        \end{itemize}
+    \end{tcolorbox}
+    
+    \vfill
+    {\footnotesize \textcolor{darkgray}{Confidential -- Prepared exclusively for the FundsRoom Technical Hiring Team}}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% --- 1. Executive Summary & Business Workflow ---
+\section{Executive Summary \& Business Scenario}
+
+Industrial manufacturing and wholesale distribution enterprises operate in high-volume, multi-role commercial environments. A customer engagement cannot be handled like a generic consumer e-commerce cart. Instead, it must follow an auditable, strict enterprise supply pipeline:
+
+\begin{center}
+\begin{tcolorbox}[colback=lightgray,colframe=primary,arc=2mm,width=0.95\textwidth]
+\centering
+\textbf{Customer Enquiry} $\longrightarrow$ \textbf{Quotation} $\longrightarrow$ \textbf{Sales Order} $\longrightarrow$ \textbf{Inventory Reservation} $\longrightarrow$ \textbf{Dispatch}
+\end{tcolorbox}
+\end{center}
+
+\subsection{Core Operational Challenges Addressed}
+\begin{enumerate}[itemsep=0.3em]
+    \item \textbf{Concurrency \& Negative Stock Overselling:} Multiple sales representatives simultaneously confirming high-demand industrial orders for limited stock.
+    \item \textbf{Quotation Tampering \& Pricing Discrepancies:} Eliminating client-side calculations so that discount deductions, 18\% GST, and line amounts are strictly governed by backend business rules.
+    \item \textbf{Two-Phase Inventory Lifecycle:} Ensuring physical inventory remains un-deducted during the reservation state, while deducting both physical and reserved inventory upon actual warehouse dispatch.
+    \item \textbf{Enforced Role-Based Access Control (RBAC):} Guaranteeing via backend middleware that Sales users cannot approve stock reservations or dispatches.
+\end{enumerate}
+
+---
+
+% --- 2. System Architecture & Tech Stack ---
+\section{System Architecture \& Tech Stack}
+
+\subsection{Three-Tier Relational Architecture}
+\begin{center}
+\begin{tcolorbox}[colback=lightgray,colframe=bordercolor,arc=2mm,width=\textwidth]
+\begin{verbatim}
+[ React 18 + Vite SPA Client ]
+  ├── 4 Screens: Login, Customer Enquiries, Quotations, Sales Orders
+  ├── Role-aware UI guards (Admin vs. Sales)
+  └── Axios Client with Bearer JWT Interceptor
+         │
+         ▼  HTTPS REST API Calls
+[ Express.js + Node.js Backend (TypeScript) ]
+  ├── JWT Auth (authenticate) & RBAC Middleware (authorizeRoles)
+  ├── Zod Schema Input Validators (enquiries, quotes, dispatches)
+  ├── Server-Side Commercial Pricing Engine (calculations.ts)
+  └── Prisma ORM Client & Raw PostgreSQL Query Runner
+         │
+         ▼  ACID Transactions + Row-Level Locking (SELECT ... FOR UPDATE)
+[ Cloud PostgreSQL Instance (Neon Serverless, Schema: pern_erp) ]
+  ├── Relational Tables: users, customers, products, inventory,
+  │                      enquiries, quotations, sales_orders, dispatches
+  └── Foreign Keys, Unique Constraints & Check Constraints
+\end{verbatim}
+\end{tcolorbox}
+\end{center}
+
+\subsection{Technology Matrix}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Justification \& Engineering Role} \\
+\midrule
+\textbf{Frontend} & React 18, TypeScript, Vite & Single-Page Application with sub-second HMR and strict typing. \\
+\textbf{Styling} & Tailwind CSS v4, Lucide Icons & Responsive industrial admin dashboard without heavyweight bloat. \\
+\textbf{Backend} & Node.js 22, Express.js, TypeScript & Asynchronous non-blocking REST API with compiled type safety. \\
+\textbf{Database} & PostgreSQL 16 (Neon Serverless) & Dedicated schema \texttt{pern\_erp}, ACID guarantees, row-level locking. \\
+\textbf{ORM / Data} & Prisma 5.22 + Raw SQL Locks & Type-safe migrations combined with \texttt{FOR UPDATE} row locking. \\
+\textbf{Security} & JWT, BCrypt.js, Zod & Salted password hashing, stateless 12h tokens, strict payload validation. \\
+\textbf{Testing} & Vitest, Supertest & Fast, automated integration suite covering concurrency and constraints. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+---
+
+% --- 3. Critical Engineering: Concurrency & Pessimistic Row-Locking ---
+\section{Critical Engineering: Concurrency \& Stock Reservation}
+
+\subsection{The Race Condition Challenge}
+Consider a scenario where an industrial product has:
+\begin{equation}
+\text{Physical Stock} = 120, \quad \text{Reserved Stock} = 20 \implies \text{Available Stock} = 120 - 20 = 100 \text{ units}
+\end{equation}
+If two sales representatives confirm orders almost simultaneously:
+\begin{itemize}[itemsep=0.2em]
+    \item \textbf{User A} requests $80$ units.
+    \item \textbf{User B} requests $50$ units.
+    \item Total demanded = $130$ units, but only $100$ units are available.
+\end{itemize}
+In standard web applications, both concurrent requests execute parallel \texttt{SELECT} queries, read $\text{Available} = 100$, approve both orders, and set reserved stock to $150$, resulting in a disastrous negative available inventory of $-30$.
+
+\subsection{The Solution: Pessimistic Row-Locking (\texttt{SELECT ... FOR UPDATE})}
+The order confirmation engine inside \texttt{salesOrder.controller.ts} wraps the inventory verification and reservation in a strict PostgreSQL database transaction with pessimistic row-locking:
+
+\begin{lstlisting}[language=SQL, caption={Pessimistic Row-Locking Reservation Engine}]
+BEGIN;
+
+-- 1. Sort product IDs ascending to eliminate distributed deadlocks
+SELECT product_id, physical_qty, reserved_qty 
+FROM pern_erp.inventory 
+WHERE product_id = ANY($1::int[]) 
+ORDER BY product_id ASC 
+FOR UPDATE;
+
+-- 2. Verify stock sufficiency inside the exclusive locked boundary:
+-- IF (physical_qty - reserved_qty) < requested_qty:
+--     ROLLBACK;
+--     RAISE EXCEPTION 'INSUFFICIENT_STOCK';
+
+-- 3. Atomically reserve inventory (physical stays constant)
+UPDATE pern_erp.inventory 
+SET reserved_qty = reserved_qty + $requestedQty, updated_at = NOW() 
+WHERE product_id = $productId;
+
+-- 4. Mark Sales Order as CONFIRMED
+UPDATE pern_erp.sales_orders 
+SET status = 'CONFIRMED' 
+WHERE id = $orderId;
+
+COMMIT;
+\end{lstlisting}
+
+\subsection{Deadlock Prevention Guarantee}
+By sorting all line-item product IDs in strictly ascending order (\texttt{ORDER BY product\_id ASC}) before requesting locks, transactions accessing multiple products acquire locks in the exact same sequence. This mathematically eliminates cycle-wait conditions and prevents PostgreSQL distributed transaction deadlocks.
+
+\subsection{Two-Phase Inventory Deduction Mechanics}
+\begin{enumerate}[itemsep=0.3em]
+    \item \textbf{At Order Confirmation (Reservation):}
+    \begin{equation}
+    \text{Physical Quantity} \quad (\text{unchanged}), \quad \text{Reserved Quantity} \uparrow, \quad \text{Available Quantity} \downarrow
+    \end{equation}
+    \item \textbf{At Physical Dispatch:}
+    \begin{equation}
+    \text{Physical Quantity} \downarrow, \quad \text{Reserved Quantity} \downarrow, \quad \text{Available Quantity} \quad (\text{unchanged})
+    \end{equation}
+    \item \textbf{At Order Cancellation:}
+    \begin{equation}
+    \text{Reserved Quantity} \downarrow \implies \text{Available Quantity} \uparrow \quad (\text{inventory safely released back})
+    \end{equation}
+\end{enumerate}
+
+---
+
+% --- 4. Relational Database Architecture ---
+\section{Database Architecture \& Relational Schema}
+
+The relational schema is maintained in PostgreSQL under the dedicated namespace \texttt{pern\_erp}.
+
+\subsection{Relational Entity Schema Table}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Entity Table} & \textbf{Primary / Foreign Keys} & \textbf{Key Constraints \& Integrity Rules} \\
+\midrule
+\texttt{users} & \texttt{id} (PK) & Unique \texttt{email}, hashed passwords, enum \texttt{role} (\texttt{ADMIN, SALES}). \\
+\texttt{customers} & \texttt{id} (PK) & Company name, contact person, mobile, email, city. \\
+\texttt{products} & \texttt{id} (PK) & Unique \texttt{product\_code}, category, unit, base price (Decimal 12,2). \\
+\texttt{inventory} & \texttt{id} (PK), \texttt{product\_id} (FK, UK) & Physical qty, reserved qty; 1:1 relation with product. \\
+\texttt{enquiries} & \texttt{id} (PK), \texttt{customer\_id}, \texttt{created\_by} & Unique \texttt{enquiry\_number}, required date, status enum. \\
+\texttt{enquiry\_items} & \texttt{id} (PK), \texttt{enquiry\_id}, \texttt{product\_id} & Line-item quantity requirements per product. \\
+\texttt{quotations} & \texttt{id} (PK), \texttt{enquiry\_id} (FK, UK) & Unique \texttt{quotation\_number}, valid until date, grand total, status. \\
+\texttt{quotation\_items} & \texttt{id} (PK), \texttt{quotation\_id}, \texttt{product\_id} & Unit price, discount \%, GST \%, backend-calculated line amount. \\
+\texttt{sales\_orders} & \texttt{id} (PK), \texttt{quotation\_id} (FK, UK) & Unique \texttt{quotation\_id} prevents duplicate sales order generation. \\
+\texttt{sales\_order\_items} & \texttt{id} (PK), \texttt{sales\_order\_id}, \texttt{product\_id} & Snapshot of accepted quantity, unit price, line amount. \\
+\texttt{dispatches} & \texttt{id} (PK), \texttt{sales\_order\_id} (FK) & Unique \texttt{dispatch\_number}, vehicle number, driver name, dispatcher ID. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Server-Side Commercial Pricing Formulation}
+Quotation calculations are executed strictly on the server:
+\begin{align}
+\text{Base Amount} &= \text{Quantity} \times \text{Unit Price} \\
+\text{Discount Amount} &= \text{Base Amount} \times \left( \frac{\text{Discount \%}}{100} \right) \\
+\text{Taxable Amount} &= \text{Base Amount} - \text{Discount Amount} \\
+\text{GST Amount} &= \text{Taxable Amount} \times \left( \frac{\text{GST \%}}{100} \right) \\
+\text{Line Amount} &= \text{Taxable Amount} + \text{GST Amount} \\
+\text{Grand Total} &= \sum \text{Line Amounts}
+\end{align}
+
+---
+
+% --- 5. Test Evaluation Accounts & RBAC Matrix ---
+\section{Test Evaluation Accounts \& RBAC Security Matrix}
+
+\subsection{Pre-Seeded Evaluation Credentials}
+All default test accounts are seeded with password: \textbf{\texttt{password123}}
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{Role} & \textbf{Email Address} & \textbf{Password} & \textbf{Operational Scope} \\
+\midrule
+\textbf{Admin} & \texttt{admin@fundsroom.com} & \texttt{password123} & Confirm orders, reserve stock, process dispatches, adjust physical stock. \\
+\textbf{Sales} & \texttt{sales@fundsroom.com} & \texttt{password123} & Log customer enquiries, generate quotations, accept quotes, convert to orders. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Granular Authorization Matrix}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{X c c}
+\toprule
+\textbf{Capability / API Endpoint} & \textbf{Admin User} & \textbf{Sales User} \\
+\midrule
+Create Customer Master (\texttt{POST /api/customers}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{accent}{\textbf{Allowed}} \\
+Create Enquiry with Products (\texttt{POST /api/enquiries}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{accent}{\textbf{Allowed}} \\
+Create Quotation (\texttt{POST /api/quotations}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{accent}{\textbf{Allowed}} \\
+Accept / Reject Quotation (\texttt{PATCH /api/quotations/:id/status}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{accent}{\textbf{Allowed}} \\
+Convert to Sales Order (\texttt{POST /api/quotations/:id/convert}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{accent}{\textbf{Allowed}} \\
+Confirm Order \& Reserve Stock (\texttt{POST /api/sales-orders/:id/confirm}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{danger}{\textbf{Denied (403)}} \\
+Process Dispatch (\texttt{POST /api/sales-orders/:id/dispatch}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{danger}{\textbf{Denied (403)}} \\
+Cancel Order \& Release Stock (\texttt{POST /api/sales-orders/:id/cancel}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{danger}{\textbf{Denied (403)}} \\
+Adjust Physical Warehouse Stock (\texttt{PATCH /api/products/:id/stock}) & \textcolor{accent}{\textbf{Allowed}} & \textcolor{danger}{\textbf{Denied (403)}} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+---
+
+% --- 6. Automated Test Suite Results ---
+\section{Automated Test Suite Verification}
+
+The backend includes a comprehensive automated test suite (\texttt{backend/tests/erp.test.ts}) executed via Vitest and Supertest:
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabularx}{\textwidth}{l l X c}
+\toprule
+\textbf{\#} & \textbf{Test Description} & \textbf{Target Verification \& Assertions} & \textbf{Result} \\
+\midrule
+\textbf{1} & Quotation Calculation & Line base, discount, GST, and grand total match server formulas. & \textcolor{accent}{\textbf{PASS}} \\
+\textbf{2} & Status Gatekeeping & DRAFT or REJECTED quotations return HTTP 400 on convert attempt. & \textcolor{accent}{\textbf{PASS}} \\
+\textbf{3} & Idempotency / Duplicate Check & Second convert call on accepted quotation returns HTTP 409 Conflict. & \textcolor{accent}{\textbf{PASS}} \\
+\textbf{4} & Stock Limits & Requesting beyond available stock returns HTTP 400 (\texttt{INSUFFICIENT\_STOCK}). & \textcolor{accent}{\textbf{PASS}} \\
+\textbf{5} & Backend RBAC & Sales user calling confirm/dispatch receives HTTP 403 Forbidden. & \textcolor{accent}{\textbf{PASS}} \\
+\textbf{Bonus} & Simultaneous Concurrency & \texttt{Promise.all} dual confirms: 1 succeeds (200), 1 aborts (400) safely. & \textcolor{accent}{\textbf{PASS}} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{center}
+\begin{tcolorbox}[colback=lightgray,colframe=accent,arc=2mm,width=0.95\textwidth]
+\textbf{Test Execution Summary:} \texttt{6 passed / 6 total} (100\% test pass rate with zero runtime regressions).
+\end{tcolorbox}
+\end{center}
+
+---
+
+% --- 7. Local Setup & Execution Guide ---
+\section{Local Setup \& Execution Guide}
+
+\subsection{Prerequisites}
+\begin{itemize}[itemsep=0.2em]
+    \item Node.js: \texttt{v22.x} or \texttt{v18.x}
+    \item npm: \texttt{v10.x}
+    \item Git
+\end{itemize}
+
+\subsection{Step-by-Step Instructions}
+\begin{lstlisting}[language=bash, caption={Local Startup Instructions}]
+# 1. Clone the repository
+git clone https://github.com/CHETHCODEX/-PERN-stack.git
+cd -PERN-stack
+
+# 2. Setup and run backend
+cd backend
+npm install
+npm run db:push
+npm run db:seed
+npm run dev
+
+# Backend will run at: http://localhost:5001
+# Health check at: http://localhost:5001/health
+
+# 3. Setup and run frontend (in a separate terminal)
+cd ../frontend
+npm install
+npm run dev
+
+# Frontend UI will run at: http://localhost:5173
+\end{lstlisting}
+
+\subsection{Running the Automated Test Suite}
+\begin{lstlisting}[language=bash, caption={Running Vitest Test Suite}]
+cd backend
+npm test
+\end{lstlisting}
+
+---
+
+% --- 8. Conclusion ---
+\section{Conclusion}
+
+The FundsRoom PERN Full-Stack Mini ERP demonstrates complete compliance with enterprise engineering standards. By pairing relational PostgreSQL constraints, server-side pricing validation, and pessimistic row-locking with a responsive React 18 interface, the system achieves strict inventory integrity, zero negative stock overselling, and end-to-end auditability across the commercial supply lifecycle.
+
+\end{document}
