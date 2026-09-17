@@ -1,5 +1,14 @@
 # FundsRoom PERN Mini ERP — Manufacturing & Supply Chain Operations Portal
 
+## 🌐 Live Production Deployments
+
+- 🖥️ **Live Web Application (Frontend)**: [https://pern-stack-beta.vercel.app](https://pern-stack-beta.vercel.app)
+- ⚙️ **Live REST API (Backend)**: [https://pern-stack-r5yy.onrender.com/api](https://pern-stack-r5yy.onrender.com/api)
+- 🩺 **API Health Check**: [https://pern-stack-r5yy.onrender.com/health](https://pern-stack-r5yy.onrender.com/health)
+- 📦 **GitHub Repository**: [https://github.com/CHETHCODEX/-PERN-stack](https://github.com/CHETHCODEX/-PERN-stack)
+- 🗄️ **Database**: Cloud PostgreSQL on Neon.tech (Dedicated Schema pern_erp)
+
+---
 A production-grade, full-stack Mini ERP designed for industrial equipment manufacturing and wholesale supply. Built strictly on the **PERN stack (PostgreSQL, Express.js, React.js, Node.js + TypeScript)**, implementing strict ACID transactions with pessimistic row-locking to guarantee 100% stock integrity across high-concurrency order confirmations.
 
 ---
